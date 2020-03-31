@@ -46,6 +46,19 @@
     wire [6:0] sig_counter_d;
     /*-------------------------------------*/
     
+    /*Declaring Variables for backpropagation*/
+    reg en4;                                //final enable
+    reg [9:0] w_i_q;                        //i counter 10 bits for 784
+    wire [9:0] w_i_d;
+    reg [6:0] w_j_q;                        //j counter 7 bit for 40
+    wire [6:0] w_i_d;
+    //We already have w, where we will be assigning the final values
+    //reg signed [15:0] weight [0:783] -- weight goes from -128 to 128
+    wire signed [15:0] inter1;                     //will store ycap - y
+    wire signed [31:0] inter2;                     //will store invec*inter1
+    wire signed [15:0] inter3;                     //will store final combinational logic result
+    /*---------------------------------------*/
+    
     /* Processing invec reading */
     assign clk1 = clk & en1;
     assign finaladdr_d = j_q * 784 + addr_q;
@@ -68,6 +81,9 @@
     assign sig_in = (z[sig_counter_q] > 0)? (z[sig_counter_q] [18:8]) : (z_neg[18:8]);
     sigmoid u1(.in(sig_in), .out(sig_out));
     /*---------------------------------------------------*/
+    
+    /*-------------Back Propagation--------------------*/
+    /*-------------------------------------------------*/
     
     // We can use addr_q to read the weight column, then turn OFF en_w to stop the reading
     /*---------------------------*/
@@ -109,6 +125,12 @@
             en3 <= 0;
             sig_counter_q <= 0;
             /*--------------------------*/
+            
+            /*Initialising Back Propagation Block*/
+            en4 <= 0;
+            w_i_q <= 0;
+            w_j_q <= 0;
+            /*-----------------------------------*/
             end
         else
             begin
@@ -165,42 +187,48 @@
                     en3 <= 0;
                     end
                 end
-            end
+            
             
             if(en3 == 1)
-            begin
-            sig_counter_q <= sig_counter_d;
-            //performing sigmoid operation
-            if((z[sig_counter_q] >= 524288) || (z[sig_counter_q] <= -524288))
                 begin
-                if(z[sig_counter_q] >= 524288)
+                sig_counter_q <= sig_counter_d;
+                //performing sigmoid operation
+                if((z[sig_counter_q] >= 524288) || (z[sig_counter_q] <= -524288))
                     begin
-                    ycap[sig_counter_q] <= {{1'b0},{1'b1},{8{1'b0}}};
+                    if(z[sig_counter_q] >= 524288)
+                        begin
+                        ycap[sig_counter_q] <= {{1'b0},{1'b1},{8{1'b0}}};
+                        end
+                    else
+                        begin
+                        ycap[sig_counter_q] <= 0;
+                        end
                     end
                 else
                     begin
-                    ycap[sig_counter_q] <= 0;
+                    if(z[sig_counter_q] >= 0)
+                        begin
+                        ycap[sig_counter_q] <= {{2{1'b0}},sig_out};
+                        end
+                    else
+                        begin
+                        ycap[sig_counter_q] <= 10'b0100000000 - sig_out;
+                        end
                     end
-                end
-            else
-                begin
-                if(z[sig_counter_q] >= 0)
+                //ending the sigmoid block
+                if(sig_counter_q == 39)
                     begin
-                    ycap[sig_counter_q] <= {{2{1'b0}},sig_out};
+                    en3 <= 0;
                     end
                 else
                     begin
-                    ycap[sig_counter_q] <= 10'b0100000000 - sig_out;
+                    en3 <= 1;
                     end
                 end
-            //ending the sigmoid block
-            if(sig_counter_q == 39)
+            
+            //en4 code
+            if(en4 == 1)
                 begin
-                en3 <= 0;
-                end
-            else
-                begin
-                en3 <= 1;
                 end
             end
     end
