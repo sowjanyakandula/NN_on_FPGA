@@ -83,6 +83,11 @@
     /*---------------------------------------------------*/
     
     /*-------------Back Propagation--------------------*/
+    assign w_j_d = (en4 == 1)? ((w_j_q == 39) ? (0) : (w_j_q + 1)) : (0);       //counter assignments
+    assign w_i_q = (en4 == 1)? ((w_j_q == 39)? (w_i_q + 1) : (w_i_q)) : (0);
+    assign inter1 = (w_j_q > 19)? (ycap[w_j_q]) : (ycap[w_j_q] - 10'b0100000000);
+    assign inter2 = invec[w_i_q][w_j_q] * inter1;
+    assign inter3 = {{4{inter2[31]}},{inter2[23:12]}};
     /*-------------------------------------------------*/
     
     // We can use addr_q to read the weight column, then turn OFF en_w to stop the reading
@@ -229,6 +234,21 @@
             //en4 code
             if(en4 == 1)
                 begin
+                //counter assignments
+                w_i_q <= w_i_d;
+                w_j_q <= w_j_d;
+                
+                weight[w_i_q] <= weight[w_i_q] - inter3;
+                
+                //ending the back propagation block
+                if(w_i_q == 783 && w_j_q == 39)
+                    begin
+                    en4 <= 0;
+                    end
+                else
+                    begin
+                    en4 <= 1;
+                    end
                 end
             end
     end
