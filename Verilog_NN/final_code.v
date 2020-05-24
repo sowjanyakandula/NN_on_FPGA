@@ -51,7 +51,7 @@
     reg [9:0] w_i_q;                        //i counter 10 bits for 784
     wire [9:0] w_i_d;
     reg [6:0] w_j_q;                        //j counter 7 bit for 40
-    wire [6:0] w_i_d;
+    wire [6:0] w_j_d;
     //We already have w, where we will be assigning the final values
     //reg signed [15:0] weight [0:783] -- weight goes from -128 to 128
     wire signed [15:0] inter1;                     //will store ycap - y
@@ -84,7 +84,7 @@
     
     /*-------------Back Propagation--------------------*/
     assign w_j_d = (en4 == 1)? ((w_j_q == 39) ? (0) : (w_j_q + 1)) : (0);       //counter assignments
-    assign w_i_q = (en4 == 1)? ((w_j_q == 39)? (w_i_q + 1) : (w_i_q)) : (0);
+    assign w_i_d = (en4 == 1)? ((w_j_q == 39)? (w_i_q + 1) : (w_i_q)) : (0);
     assign inter1 = (w_j_q > 19)? (ycap[w_j_q]) : (ycap[w_j_q] - 10'b0100000000);
     assign inter2 = invec[w_i_q][w_j_q] * inter1;
     assign inter3 = {{4{inter2[31]}},{inter2[23:12]}};
