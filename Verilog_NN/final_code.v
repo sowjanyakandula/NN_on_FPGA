@@ -224,10 +224,12 @@
                 if(sig_counter_q == 39)
                     begin
                     en3 <= 0;
+                    en4 <= 1;
                     end
                 else
                     begin
                     en3 <= 1;
+                    en4 <= 0;
                     end
                 end
             
