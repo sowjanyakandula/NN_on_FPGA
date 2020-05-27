@@ -36,7 +36,6 @@ module Verif_finalcode(
         begin
             @(posedge clk);
             //$fwrite(f,"%b,\n", wout);
-            $fwrite(j, "%b,\n", sigread);
             if(i < 31360)                               //invec and weight read
                 begin
                 $fwrite(f, "%b,\n", dout);
@@ -55,12 +54,11 @@ module Verif_finalcode(
                     $fwrite(h, "%b,\n", zread);
                     end
                 end
-            /*sigmoid check is not working    
+               
             if((i >= 62720) && (i < 62760))
                 begin
                 $fwrite(j, "%b,\n", sigread);
                 end
-            ------------------------------*/
                 
             if(i >= 62760)
                 begin
