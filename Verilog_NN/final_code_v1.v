@@ -276,8 +276,8 @@
     assign dummy = ((addr_q == 0) &&(j_q == 0))?(invec[0][0]):((addr_q == 0)?(invec[783][j_q-1]):(invec[addr_q-1][j_q]));
     
     /*Reading for Verification*/
-    assign zread = z[c_q];
-    assign sigread = ycap[sig_counter_q];
-    assign newwout = weight[w_i_q];
+    assign zread = (en2 == 1)? ((c_q == 0)? (0) : (z[c_q - 1])) : (0);
+    assign sigread = (en3 == 1)? ((sig_counter_q == 0)? (0) : (ycap[sig_counter_q - 1])) : (0);
+    assign newwout = (en4 == 1)? ((w_i_q == 0)? (0) : (weight[w_i_q - 1])) : (0);
     /*------------------------*/
 endmodule
