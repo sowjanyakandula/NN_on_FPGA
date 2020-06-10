@@ -3,9 +3,16 @@
     module final_code(
     input clk,
     input rst,
+    input [15:0] index1,
+    input [15:0] index2,
     output [7:0] dout,
     output [7:0] dummy,
-    output [11:0] wout
+    output [11:0] wout,
+    output [7:0] dataout,
+    output [11:0] weightout,        //weight read
+    output [31:0] zread,            //z read
+    output [9:0] sigread,           //sigmoid read (ycap)
+    output [11:0] newwout           //new weight written
     );
     wire clk1;
     reg en1;                                                   // enable for invec reading
@@ -58,6 +65,11 @@
     wire signed [31:0] inter2;                     //will store invec*inter1
     wire signed [15:0] inter3;                     //will store final combinational logic result
     /*---------------------------------------*/
+    
+    /*Epoch Control*/
+    reg [3:0] EPOCH_MAX;
+    reg [3:0] epoch_counter = 0;
+    /*-------------*/
     
     /* Processing invec reading */
     assign clk1 = clk & en1;
@@ -136,6 +148,11 @@
             w_i_q <= 0;
             w_j_q <= 0;
             /*-----------------------------------*/
+            
+            /*Initialising epoch control*/
+            EPOCH_MAX <= 10;
+            epoch_counter <= 1;
+            /*--------------------------*/
             end
         else
             begin
@@ -158,7 +175,7 @@
                     end
                 if(en_w == 1)
                     begin
-                        weight[addr_q] <= {{wout[11]},{4{1'b0}},{wout[10:0]}};      //Reading weight column
+                        weight[addr_q] <= {{5{wout[11]}},{wout[10:0]}};      //Reading weight column
                     end
                 if(addr_q == 783)
                     begin
@@ -240,12 +257,29 @@
                 w_i_q <= w_i_d;
                 w_j_q <= w_j_d;
                 
-                weight[w_i_q] <= weight[w_i_q] - inter3;
+                if(w_j_q == 0)
+                    begin
+                    weight[w_i_q] <= inter3;
+                    end
+                 else
+                    begin
+                    weight[w_i_q] <= weight[w_i_q] - inter3;
+                    end
+                //weight[w_i_q] <= weight[w_i_q] - inter3;
                 
                 //ending the back propagation block
                 if(w_i_q == 783 && w_j_q == 39)
                     begin
-                    en4 <= 0;
+                    if(epoch_counter == EPOCH_MAX)
+                        begin
+                        en4 <= 0;
+                        end
+                    else
+                        begin
+                        epoch_counter <= epoch_counter + 1;
+                        en4 <= 0;
+                        en2 <= 1;
+                        end
                     end
                 else
                     begin
@@ -271,4 +305,21 @@
     /*--------------------------*/
     
     assign dummy = ((addr_q == 0) &&(j_q == 0))?(invec[0][0]):((addr_q == 0)?(invec[783][j_q-1]):(invec[addr_q-1][j_q]));
+    
+    /*Reading for Verification*/
+    /*
+    assign dataout = invec[index1][index2];
+    assign zread = (en2 == 1)? ((c_q == 0)? (0) : (z[c_q - 1])) : (0);
+    assign sigread = (en3 == 1)? ((sig_counter_q == 0)? (0) : (ycap[sig_counter_q - 1])) : (0);
+    assign newwout = (en4 == 1)? ((w_i_q == 0)? (0) : (weight[w_i_q - 1])) : (0);
+    */
+    /*------------------------*/
+    
+    /*Reading for Verification*/
+    assign dataout = invec[index1][index2];
+    assign weightout = weight[index1];
+    assign zread = z[index1];
+    assign sigread = ycap[index1];
+    assign newwout = weight[index1];
+    /*------------------------*/
 endmodule
